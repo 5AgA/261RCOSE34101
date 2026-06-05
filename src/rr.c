@@ -35,6 +35,7 @@ void round_robin(Process proc[], int n, int quantum, GanttEntry gantt[], int *ga
         // 도착한 프로세스가 없다면 idle
         if (queue_empty(&ready_q)) {
             int next = INT_MAX;
+            int has_waiting = 0;
             for (int i = 0; i < n; i++)
                 if (proc[i].state != WAITING &&
                     proc[i].state != TERMINATED &&
@@ -43,32 +44,55 @@ void round_robin(Process proc[], int n, int quantum, GanttEntry gantt[], int *ga
                     next = proc[i].arrival_time;
 
             // 2. I/O operation - waiting 중인 프로세스가 있으면 1틱씩 처리
-            // TODO: next 점프 대신 1틱씩 waiting queue를 처리하면서 대기
-            //   for each WAITING process: io_remaining--
-            //   io_remaining == 0 이면: io_done++, io_remaining=io_burst, state=READY, in_queue[i]=0
-            //   time++
-            // (waiting 중인 프로세스가 없으면 기존처럼 next로 점프)
+            for (int i = 0; i < n; i++) {
+                if (proc[i].state == WAITING) {
+                    has_waiting = 1;
+                    proc[i].io_remaining--;
 
-            gantt[*gantt_len] = (GanttEntry){ -1, time, next };
-            (*gantt_len)++;
-            time = next;
+                    if (proc[i].io_remaining == 0) {
+                        proc[i].io_done++;
+                        proc[i].io_remaining = proc[i].io_burst;
+                        proc[i].state = READY;
+
+                        // I/O 작업이 끝났기 때문에, 다시 READY 큐에 넣을 수 있게 함
+                        in_queue[i] = 0;
+                    }
+                }
+            }
+
+            // waiting 큐가 없으면 바로 스킵
+            if (has_waiting) {
+                if (*gantt_len > 0 && gantt[*gantt_len - 1].pid == -1)
+                    gantt[*gantt_len - 1].end++;
+                else {
+                    gantt[*gantt_len] = (GanttEntry){ -1, time, time + 1 };
+                    (*gantt_len)++;
+                }
+                time++;
+            } else {
+                gantt[*gantt_len] = (GanttEntry){ -1, time, next };
+                (*gantt_len)++;
+                time = next;
+            }
             continue;
         }
 
         // 실행 시킬 프로세스 디큐
         Process *cur = dequeue(&ready_q);
         int idx = cur->pid - 1;
-
-        // quantum만큼 실행하되 I/O 트리거 시점을 넘지 않도록 조절
-        // TODO: run = min(remaining_cpu, quantum) 계산
-        // TODO: I/O 트리거 시점(interval의 배수)까지 남은 틱을 계산해서
-        //       run이 그 시점을 넘으면 run을 줄이기
+        int interval = (cur->io_count > 0) ? cur->cpu_burst / (cur->io_count + 1) : INT_MAX;
+        if (interval == 0) interval = 1;
         int run = (cur->remaining_cpu < quantum) ? cur->remaining_cpu : quantum;
+
+        if (cur->io_done < cur->io_count) {
+            int before_trigger = interval - (cur->cpu_done % interval);
+            if (before_trigger < run) run = before_trigger;
+        }
 
         gantt[*gantt_len] = (GanttEntry){ cur->pid, time, time + run };
         (*gantt_len)++;
 
-        // run만큼 실행
+        // 현재 프로세스를 run만큼 실행
         cur->remaining_cpu -= run;
         cur->cpu_done      += run;
         time               += run;
@@ -85,34 +109,35 @@ void round_robin(Process proc[], int n, int quantum, GanttEntry gantt[], int *ga
             }
         }
 
-        // 2. I/O operation - waiting queue 처리 (run틱 경과)
+        // 2. I/O operation - 다른 프로세스들 I/O 작업 (run틱 만큼 경과)
         for (int i = 0; i < n; i++) {
             if (proc[i].state == WAITING) {
-                // TODO: io_remaining을 run만큼 감소
-                // io_remaining <= 0 이면:
-                //   io_done++
-                //   io_remaining = io_burst
-                //   state = READY
-                //   in_queue[i] = 0  ← 레디큐에 다시 들어올 수 있도록
+                proc[i].io_remaining -= run;
+                
+                if(proc[i].io_remaining <= 0) {
+                    proc[i].io_done++;
+                    proc[i].io_remaining = proc[i].io_burst;
+                    proc[i].state = READY;
+                    in_queue[i] = 0;
+                }
             }
         }
 
-        // 2. I/O operation - I/O 트리거 체크
-        // TODO: interval 계산 (cpu_burst / (io_count + 1))
-        // TODO: cpu_done % interval == 0 && io_done < io_count 이면
-        //   io_remaining = io_burst
-        //   state = WAITING
-        //   in_queue[idx] = 0  ← 레디큐에 다시 넣지 않음
-        // else (I/O 없이 quantum 소진):
-        //   완료 체크: remaining_cpu == 0 이면 completion_time=time, state=TERMINATED, completed++
-        //   아니면: 레디큐 뒤에 재삽입, in_queue[idx] = 0
-        (void)idx;
+        // 2. I/O operation - 현재 프로세스의 I/O 트리거 체크
+        if (cur->io_count > 0 && cur->io_done < cur->io_count &&
+            cur->cpu_done % interval == 0) {
+            cur->state = WAITING;
+            in_queue[idx] = 0;
+        }
 
+        // 완료 체크
         if (cur->remaining_cpu == 0) {
             cur->completion_time = time;
+            cur->state = TERMINATED;
             completed++;
-        } else {
-            enqueue(&ready_q, cur);
+        } else if (cur->state != WAITING) {
+            in_queue[idx] = 0;  // 다음 루프에서 큐에 재삽입
         }
+
     }
 }
