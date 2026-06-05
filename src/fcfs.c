@@ -70,10 +70,9 @@ void fcfs(Process proc[], int n, GanttEntry gantt[], int *gantt_len) {
         // 2. I/O operation - I/O 트리거 체크
         int interval = (proc[sel].io_count > 0) ? proc[sel].cpu_burst / (proc[sel].io_count + 1) : INT_MAX;
         interval = (interval == 0) ? 1 : interval;
-        
+
         if (proc[sel].cpu_done % interval == 0 && 
             proc[sel].io_done < proc[sel].io_count) {
-            proc[sel].io_remaining = proc[sel].io_burst;
             proc[sel].state = WAITING;
             prev_pid = -2;
         }

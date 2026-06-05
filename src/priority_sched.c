@@ -11,11 +11,13 @@ void priority_non_preemptive(Process proc[], int n, GanttEntry gantt[], int *gan
         // 2. I/O operation - waiting queue 처리 (매 tick)
         for (int i = 0; i < n; i++) {
             if (proc[i].state == WAITING) {
-                // TODO: io_remaining 1 감소
-                // io_remaining == 0 이면:
-                //   io_done++
-                //   io_remaining = io_burst
-                //   state = READY
+                proc[i].io_remaining--;
+
+                if(proc[i].io_remaining == 0) {
+                    proc[i].io_done++;
+                    proc[i].io_remaining = proc[i].io_burst;
+                    proc[i].state = READY;
+                }
             }
         }
 
@@ -59,18 +61,22 @@ void priority_non_preemptive(Process proc[], int n, GanttEntry gantt[], int *gan
         prev_pid = proc[sel].pid;
 
         // 2. I/O operation - I/O 트리거 체크
-        // TODO: interval 계산 (cpu_burst / (io_count + 1))
-        // TODO: cpu_done % interval == 0 && io_done < io_count 이면
-        //   io_remaining = io_burst
-        //   state = WAITING
-        //   prev_pid = -2
+        int interval = (proc[sel].io_count > 0) ? proc[sel].cpu_burst / (proc[sel].io_count + 1) : INT_MAX;
+        interval = (interval == 0) ? 1 : interval;
+        
+        if (proc[sel].cpu_done % interval == 0 && 
+            proc[sel].io_done < proc[sel].io_count) {
+            proc[sel].state = WAITING;
+            prev_pid = -2;
+        }
 
         // 완료 체크
-        // TODO: remaining_cpu == 0 이면
-        //   completion_time = time
-        //   state = TERMINATED
-        //   completed++
-        //   prev_pid = -2
+        if(proc[sel].remaining_cpu == 0) {
+            proc[sel].completion_time = time;
+            proc[sel].state = TERMINATED;
+            completed++;
+            prev_pid = -2;
+        }
     }
 }
 
@@ -83,11 +89,13 @@ void priority_preemptive(Process proc[], int n, GanttEntry gantt[], int *gantt_l
         // 2. I/O operation - waiting queue 처리 (매 tick)
         for (int i = 0; i < n; i++) {
             if (proc[i].state == WAITING) {
-                // TODO: io_remaining 1 감소
-                // io_remaining == 0 이면:
-                //   io_done++
-                //   io_remaining = io_burst
-                //   state = READY
+                proc[i].io_remaining--;
+
+                if(proc[i].io_remaining == 0) {
+                    proc[i].io_done++;
+                    proc[i].io_remaining = proc[i].io_burst;
+                    proc[i].state = READY;
+                }
             }
         }
 
@@ -132,17 +140,21 @@ void priority_preemptive(Process proc[], int n, GanttEntry gantt[], int *gantt_l
         prev_pid = proc[sel].pid;
 
         // 2. I/O operation - I/O 트리거 체크
-        // TODO: interval 계산 (cpu_burst / (io_count + 1))
-        // TODO: cpu_done % interval == 0 && io_done < io_count 이면
-        //   io_remaining = io_burst
-        //   state = WAITING
-        //   prev_pid = -2
+        int interval = (proc[sel].io_count > 0) ? proc[sel].cpu_burst / (proc[sel].io_count + 1) : INT_MAX;
+        interval = (interval == 0) ? 1 : interval;
+        
+        if (proc[sel].cpu_done % interval == 0 && 
+            proc[sel].io_done < proc[sel].io_count) {
+            proc[sel].state = WAITING;
+            prev_pid = -2;
+        }
 
         // 완료 체크
-        // TODO: remaining_cpu == 0 이면
-        //   completion_time = time
-        //   state = TERMINATED
-        //   completed++
-        //   prev_pid = -2
+        if(proc[sel].remaining_cpu == 0) {
+            proc[sel].completion_time = time;
+            proc[sel].state = TERMINATED;
+            completed++;
+            prev_pid = -2;
+        }
     }
 }
