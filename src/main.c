@@ -73,6 +73,7 @@ static void write_process_table(FILE *fp, Process proc[], int n) {
     fprintf(fp, "\n");
 }
 
+// 알고리즘 하나만 실행
 static void run_one(Process original[], int n, int choice) {
     Process    proc[MAX_PROCESSES];
     GanttEntry gantt[MAX_GANTT];
@@ -100,6 +101,7 @@ static void run_one(Process original[], int n, int choice) {
     printf("  -> Saved: %s\n", filepath);
 }
 
+// 모든 알고리즘 실행
 static void run_all(Process original[], int n) {
     Process    results[ALGO_COUNT][MAX_PROCESSES];
     GanttEntry gantt[MAX_GANTT];
@@ -129,7 +131,7 @@ static void run_all(Process original[], int n) {
         printf("  -> Saved: %s\n", ALGO_FILES[a]);
     }
 
-    /* 비교표는 별도 파일 */
+    // 비교표 파일
     const char *cmp_path = RESULTS_DIR "/comparison.txt";
     FILE *fp = open_result_file(cmp_path);
     write_process_table(fp, original, n);

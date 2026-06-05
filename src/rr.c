@@ -3,6 +3,7 @@
 #include "../include/queue.h"
 #include "../include/gantt.h"
 
+// 라운드 로빈 - quantum: 최대 점유 시간
 void round_robin(Process proc[], int n, int quantum, GanttEntry gantt[], int *gantt_len) {
     Queue ready_q;
     queue_init(&ready_q);
@@ -11,7 +12,7 @@ void round_robin(Process proc[], int n, int quantum, GanttEntry gantt[], int *ga
     int in_queue[MAX_PROCESSES] = {0};
     *gantt_len = 0;
 
-    /* sort by arrival so we enqueue in order */
+    // 도착 순서대로 정렬
     for (int i = 0; i < n - 1; i++)
         for (int j = i + 1; j < n; j++)
             if (proc[i].arrival_time > proc[j].arrival_time) {
@@ -19,7 +20,7 @@ void round_robin(Process proc[], int n, int quantum, GanttEntry gantt[], int *ga
             }
 
     while (completed < n) {
-        /* enqueue all processes that have arrived */
+        // 도착한 프로세스 체크
         for (int i = 0; i < n; i++) {
             if (!in_queue[i] && proc[i].arrival_time <= time &&
                 proc[i].remaining_cpu > 0) {
@@ -28,8 +29,10 @@ void round_robin(Process proc[], int n, int quantum, GanttEntry gantt[], int *ga
             }
         }
 
+        // 도착한 프로세스가 없다면
         if (queue_empty(&ready_q)) {
             int next = INT_MAX;
+            // 다음 도착할 프로세스로 건너뛰기
             for (int i = 0; i < n; i++)
                 if (!in_queue[i] && proc[i].remaining_cpu > 0 &&
                     proc[i].arrival_time < next)
@@ -40,6 +43,7 @@ void round_robin(Process proc[], int n, int quantum, GanttEntry gantt[], int *ga
             continue;
         }
 
+        // 실행 시킬 프로세스 디큐
         Process *cur = dequeue(&ready_q);
         int run = (cur->remaining_cpu < quantum) ? cur->remaining_cpu : quantum;
 
@@ -48,7 +52,7 @@ void round_robin(Process proc[], int n, int quantum, GanttEntry gantt[], int *ga
         time               += run;
         cur->remaining_cpu -= run;
 
-        /* enqueue processes that arrived during this slice */
+        // quantum 실행 중에 도착한 프로세스 체크
         for (int i = 0; i < n; i++) {
             if (!in_queue[i] && proc[i].arrival_time <= time &&
                 proc[i].remaining_cpu > 0) {
@@ -57,10 +61,12 @@ void round_robin(Process proc[], int n, int quantum, GanttEntry gantt[], int *ga
             }
         }
 
+        // 작업을 마쳤을 경우, 완료 표시
         if (cur->remaining_cpu == 0) {
             cur->completion_time = time;
             completed++;
         } else {
+        // 작업 시간이 더 남을 경우, 큐 뒤에 추가
             enqueue(&ready_q, cur);
         }
     }

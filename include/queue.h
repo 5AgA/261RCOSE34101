@@ -3,6 +3,7 @@
 
 #include "types.h"
 
+// 원형큐로 구현
 typedef struct {
     Process *data[MAX_PROCESSES];
     int front, rear, size;

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "../include/evaluation.h"
 
+// turnaround와 waiting 시간 계산
 void calculate_times(Process proc[], int n) {
     for (int i = 0; i < n; i++) {
         proc[i].turnaround_time = proc[i].completion_time - proc[i].arrival_time;
@@ -30,6 +31,7 @@ void print_evaluation(FILE *fp, Process proc[], int n, const char *algo_name) {
     fprintf(fp, "Average Turnaround Time : %.2f\n", total_tat / n);
 }
 
+// 11. Additional Functions: Comparison
 void print_comparison(FILE *fp, Process results[][MAX_PROCESSES], int n,
                       const char *names[], int algo_count) {
     fprintf(fp, "\n========== Algorithm Comparison ==========\n");

@@ -7,16 +7,16 @@ void print_gantt(FILE *fp, GanttEntry gantt[], int len) {
 
     fprintf(fp, "\n[Gantt Chart]\n");
 
-    /* top border */
+    // 위에 있는 테두리
     fprintf(fp, " ");
     for (int i = 0; i < len; i++) {
         int w = (gantt[i].end - gantt[i].start) * 2;
-        for (int j = 0; j < w - 1; j++) fprintf(fp, "-");
+        for (int j = 0; j < w ; j++) fprintf(fp, "-");
         fprintf(fp, " ");
     }
     fprintf(fp, "\n|");
 
-    /* process labels */
+    // 프로세스 표시
     for (int i = 0; i < len; i++) {
         int w      = (gantt[i].end - gantt[i].start) * 2;
         int spaces = w - 2;
@@ -33,19 +33,21 @@ void print_gantt(FILE *fp, GanttEntry gantt[], int len) {
     }
     fprintf(fp, "\n ");
 
-    /* bottom border */
+    // 아래에 있는 테두리
     for (int i = 0; i < len; i++) {
         int w = (gantt[i].end - gantt[i].start) * 2;
-        for (int j = 0; j < w - 1; j++) fprintf(fp, "-");
+        for (int j = 0; j < w ; j++) fprintf(fp, "-");
         fprintf(fp, " ");
     }
     fprintf(fp, "\n");
 
-    /* time labels */
+    // 시간 표시
     fprintf(fp, "%d", gantt[0].start);
     for (int i = 0; i < len; i++) {
         int w = (gantt[i].end - gantt[i].start) * 2;
-        for (int j = 0; j < w - 1; j++) fprintf(fp, " ");
+        for (int j = 0; j < w ; j++) fprintf(fp, " ");
+
+        // 끝 지점만 숫자 표시
         fprintf(fp, "%d", gantt[i].end);
     }
     fprintf(fp, "\n");
