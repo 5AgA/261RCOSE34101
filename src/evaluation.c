@@ -31,7 +31,7 @@ void print_evaluation(FILE *fp, Process proc[], int n, const char *algo_name) {
     fprintf(fp, "Average Turnaround Time : %.2f\n", total_tat / n);
 }
 
-// 11. Additional Functions: Comparison
+// Comparison
 void print_comparison(FILE *fp, Process results[][MAX_PROCESSES], int n,
                       const char *names[], int algo_count) {
     fprintf(fp, "\n========== Algorithm Comparison ==========\n");

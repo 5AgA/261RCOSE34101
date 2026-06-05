@@ -21,6 +21,7 @@ void create_process(Process proc[], int n) {
 
         proc[i].remaining_cpu = proc[i].cpu_burst;
         proc[i].io_remaining  = proc[i].io_burst;
+        proc[i].cpu_done      = 0;
         proc[i].io_done       = 0;
         proc[i].waiting_time  = 0;
         proc[i].turnaround_time = 0;
@@ -40,6 +41,7 @@ void copy_processes(Process dst[], Process src[], int n) {
     
     for (int i = 0; i < n; i++) {
         dst[i].remaining_cpu    = src[i].cpu_burst;
+        dst[i].cpu_done         = 0;
         dst[i].io_remaining     = src[i].io_burst;
         dst[i].io_done          = 0;
         dst[i].waiting_time     = 0;

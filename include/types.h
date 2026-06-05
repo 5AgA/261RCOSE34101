@@ -15,6 +15,7 @@ typedef struct {
     int arrival_time;
     int cpu_burst;
     int remaining_cpu;
+    int cpu_done;
     int io_burst;
     int io_remaining;
     int io_count;
