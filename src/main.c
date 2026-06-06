@@ -77,24 +77,32 @@ static void write_process_table(FILE *fp, Process proc[], int n) {
 static void run_one(Process original[], int n, int choice) {
     Process    proc[MAX_PROCESSES];
     GanttEntry gantt[MAX_GANTT];
-    int        gantt_len = 0;
+    GanttEntry io_gantt[MAX_GANTT];
+    int        gantt_len = 0, io_gantt_len = 0;
 
     copy_processes(proc, original, n);
 
+    printf("  Running %-26s ... ", ALGO_NAMES[choice - 1]);
+    fflush(stdout);
+
+    clock_t t0 = clock();
     switch (choice) {
-        case 1: fcfs                   (proc, n, gantt, &gantt_len); break;
-        case 2: sjf_non_preemptive     (proc, n, gantt, &gantt_len); break;
-        case 3: sjf_preemptive         (proc, n, gantt, &gantt_len); break;
-        case 4: priority_non_preemptive(proc, n, gantt, &gantt_len); break;
-        case 5: priority_preemptive    (proc, n, gantt, &gantt_len); break;
-        case 6: round_robin            (proc, n, TIME_QUANTUM, gantt, &gantt_len); break;
+        case 1: fcfs                   (proc, n, gantt, &gantt_len, io_gantt, &io_gantt_len); break;
+        case 2: sjf_non_preemptive     (proc, n, gantt, &gantt_len, io_gantt, &io_gantt_len); break;
+        case 3: sjf_preemptive         (proc, n, gantt, &gantt_len, io_gantt, &io_gantt_len); break;
+        case 4: priority_non_preemptive(proc, n, gantt, &gantt_len, io_gantt, &io_gantt_len); break;
+        case 5: priority_preemptive    (proc, n, gantt, &gantt_len, io_gantt, &io_gantt_len); break;
+        case 6: round_robin            (proc, n, TIME_QUANTUM, gantt, &gantt_len, io_gantt, &io_gantt_len); break;
         default: return;
     }
+    double elapsed = (double)(clock() - t0) / CLOCKS_PER_SEC;
+    printf("done (%.6fs)\n", elapsed);
 
     const char *filepath = ALGO_FILES[choice - 1];
     FILE *fp = open_result_file(filepath);
     write_process_table(fp, original, n);
     print_gantt(fp, gantt, gantt_len);
+    print_io_gantt(fp, io_gantt, io_gantt_len, proc, n);
     print_evaluation(fp, proc, n, ALGO_NAMES[choice - 1]);
     fclose(fp);
 
@@ -105,26 +113,34 @@ static void run_one(Process original[], int n, int choice) {
 static void run_all(Process original[], int n) {
     Process    results[ALGO_COUNT][MAX_PROCESSES];
     GanttEntry gantt[MAX_GANTT];
-    int        gantt_len;
+    GanttEntry io_gantt[MAX_GANTT];
+    int        gantt_len, io_gantt_len;
 
     for (int a = 0; a < ALGO_COUNT; a++) {
         copy_processes(results[a], original, n);
-        gantt_len = 0;
+        gantt_len = 0; io_gantt_len = 0;
 
+        printf("  Running %-26s ... ", ALGO_NAMES[a]);
+        fflush(stdout);
+
+        clock_t t0 = clock();
         switch (a) {
-            case 0: fcfs                   (results[a], n, gantt, &gantt_len); break;
-            case 1: sjf_non_preemptive     (results[a], n, gantt, &gantt_len); break;
-            case 2: sjf_preemptive         (results[a], n, gantt, &gantt_len); break;
-            case 3: priority_non_preemptive(results[a], n, gantt, &gantt_len); break;
-            case 4: priority_preemptive    (results[a], n, gantt, &gantt_len); break;
-            case 5: round_robin            (results[a], n, TIME_QUANTUM, gantt, &gantt_len); break;
+            case 0: fcfs                   (results[a], n, gantt, &gantt_len, io_gantt, &io_gantt_len); break;
+            case 1: sjf_non_preemptive     (results[a], n, gantt, &gantt_len, io_gantt, &io_gantt_len); break;
+            case 2: sjf_preemptive         (results[a], n, gantt, &gantt_len, io_gantt, &io_gantt_len); break;
+            case 3: priority_non_preemptive(results[a], n, gantt, &gantt_len, io_gantt, &io_gantt_len); break;
+            case 4: priority_preemptive    (results[a], n, gantt, &gantt_len, io_gantt, &io_gantt_len); break;
+            case 5: round_robin            (results[a], n, TIME_QUANTUM, gantt, &gantt_len, io_gantt, &io_gantt_len); break;
         }
+        double elapsed = (double)(clock() - t0) / CLOCKS_PER_SEC;
+        printf("done (%.6fs)\n", elapsed);
 
         calculate_times(results[a], n);
 
         FILE *fp = open_result_file(ALGO_FILES[a]);
         write_process_table(fp, original, n);
         print_gantt(fp, gantt, gantt_len);
+        print_io_gantt(fp, io_gantt, io_gantt_len, results[a], n);
         print_evaluation(fp, results[a], n, ALGO_NAMES[a]);
         fclose(fp);
 

@@ -3,13 +3,15 @@
 #include "../include/queue.h"
 #include "../include/gantt.h"
 
-void round_robin(Process proc[], int n, int quantum, GanttEntry gantt[], int *gantt_len) {
+void round_robin(Process proc[], int n, int quantum, GanttEntry gantt[], int *gantt_len, GanttEntry io_gantt[], int *io_gantt_len) {
     Queue ready_q;
     queue_init(&ready_q);
 
     int time = 0, completed = 0;
     int in_queue[MAX_PROCESSES] = {0};
+    int io_start[MAX_PROCESSES] = {0};
     *gantt_len = 0;
+    *io_gantt_len = 0;
 
     // 도착 순서대로 정렬
     for (int i = 0; i < n - 1; i++)
@@ -50,6 +52,8 @@ void round_robin(Process proc[], int n, int quantum, GanttEntry gantt[], int *ga
                     proc[i].io_remaining--;
 
                     if (proc[i].io_remaining == 0) {
+                        io_gantt[*io_gantt_len] = (GanttEntry){proc[i].pid, io_start[i], io_start[i] + proc[i].io_burst};
+                        (*io_gantt_len)++;
                         proc[i].io_done++;
                         proc[i].io_remaining = proc[i].io_burst;
                         proc[i].state = READY;
@@ -79,7 +83,7 @@ void round_robin(Process proc[], int n, int quantum, GanttEntry gantt[], int *ga
 
         // 실행 시킬 프로세스 디큐
         Process *cur = dequeue(&ready_q);
-        int idx = cur->pid - 1;
+        int idx = cur - proc;
         int interval = (cur->io_count > 0) ? cur->cpu_burst / (cur->io_count + 1) : INT_MAX;
         if (interval == 0) interval = 1;
         int run = (cur->remaining_cpu < quantum) ? cur->remaining_cpu : quantum;
@@ -115,6 +119,8 @@ void round_robin(Process proc[], int n, int quantum, GanttEntry gantt[], int *ga
                 proc[i].io_remaining -= run;
                 
                 if(proc[i].io_remaining <= 0) {
+                    io_gantt[*io_gantt_len] = (GanttEntry){proc[i].pid, io_start[i], io_start[i] + proc[i].io_burst};
+                    (*io_gantt_len)++;
                     proc[i].io_done++;
                     proc[i].io_remaining = proc[i].io_burst;
                     proc[i].state = READY;
@@ -128,6 +134,7 @@ void round_robin(Process proc[], int n, int quantum, GanttEntry gantt[], int *ga
             cur->cpu_done % interval == 0) {
             cur->state = WAITING;
             in_queue[idx] = 0;
+            io_start[idx] = time;
         }
 
         // 완료 체크

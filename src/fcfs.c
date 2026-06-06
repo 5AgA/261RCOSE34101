@@ -7,11 +7,13 @@ static int cmp_arrival(const void *a, const void *b) {
     return ((Process *)a)->arrival_time - ((Process *)b)->arrival_time;
 }
 
-void fcfs(Process proc[], int n, GanttEntry gantt[], int *gantt_len) {
+void fcfs(Process proc[], int n, GanttEntry gantt[], int *gantt_len, GanttEntry io_gantt[], int *io_gantt_len) {
     qsort(proc, n, sizeof(Process), cmp_arrival);
 
     int time = 0, completed = 0, prev_pid = -2;
+    int io_start[MAX_PROCESSES] = {0};
     *gantt_len = 0;
+    *io_gantt_len = 0;
 
     while (completed < n) {
 
@@ -22,6 +24,8 @@ void fcfs(Process proc[], int n, GanttEntry gantt[], int *gantt_len) {
 
                 // I/O 작업 1회 완료되면
                 if(proc[i].io_remaining == 0) {
+                    io_gantt[*io_gantt_len] = (GanttEntry){proc[i].pid, io_start[i], io_start[i] + proc[i].io_burst};
+                    (*io_gantt_len)++;
                     proc[i].io_done++;
                     proc[i].io_remaining = proc[i].io_burst;
                     proc[i].state = READY;
@@ -33,7 +37,7 @@ void fcfs(Process proc[], int n, GanttEntry gantt[], int *gantt_len) {
         int sel = -1;
         for (int i = 0; i < n; i++) {
             if (proc[i].arrival_time <= time &&
-                proc[i].state == READY &&
+                (proc[i].state == READY || proc[i].state == RUNNING) &&
                 proc[i].remaining_cpu > 0) {
                 sel = i;
                 break;
@@ -71,10 +75,11 @@ void fcfs(Process proc[], int n, GanttEntry gantt[], int *gantt_len) {
         int interval = (proc[sel].io_count > 0) ? proc[sel].cpu_burst / (proc[sel].io_count + 1) : INT_MAX;
         interval = (interval == 0) ? 1 : interval;
 
-        if (proc[sel].cpu_done % interval == 0 && 
+        if (proc[sel].cpu_done % interval == 0 &&
             proc[sel].io_done < proc[sel].io_count) {
             proc[sel].state = WAITING;
             prev_pid = -2;
+            io_start[sel] = time;
         }
         
         // 완료 체크
