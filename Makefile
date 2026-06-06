@@ -2,6 +2,7 @@ CC      = gcc
 CFLAGS  = -Wall -Wextra -g -Iinclude
 
 SRCS    = src/main.c       \
+          src/runner.c     \
           src/process.c    \
           src/queue.c      \
           src/gantt.c      \
