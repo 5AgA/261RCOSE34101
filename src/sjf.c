@@ -35,8 +35,8 @@ void sjf_non_preemptive(Process proc[], int n, GanttEntry gantt[], int *gantt_le
                 if (proc[i].arrival_time <= time &&
                     proc[i].state == READY &&
                     proc[i].remaining_cpu > 0 &&
-                    proc[i].cpu_burst < min_burst) {
-                    min_burst = proc[i].cpu_burst;
+                    proc[i].remaining_cpu < min_burst) {
+                    min_burst = proc[i].remaining_cpu;
                     sel = i;
                 }
             }
