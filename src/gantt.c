@@ -82,7 +82,7 @@ void print_io_gantt(FILE *fp, GanttEntry io_gantt[], int io_gantt_len, Process p
     for (int t = 0; t <= max_time; t += 10)
         fprintf(fp, "%-10d", t);
     fprintf(fp, "\n     ");
-    for (int t = 0; t <= max_time; t++)
+    for (int t = 0; t < max_time; t++)
         fprintf(fp, "%d", t % 10);
     fprintf(fp, "\n");
 

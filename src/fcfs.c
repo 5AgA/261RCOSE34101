@@ -16,6 +16,7 @@ void fcfs(Process proc[], int n, GanttEntry gantt[], int *gantt_len, GanttEntry 
     *io_gantt_len = 0;
 
     while (completed < n) {
+        int skip_cpu[MAX_PROCESSES] = {0};
 
         // 2. I/O operation - waiting queue 처리 (매 tick)
         for (int i = 0; i < n; i++) {
@@ -29,6 +30,7 @@ void fcfs(Process proc[], int n, GanttEntry gantt[], int *gantt_len, GanttEntry 
                     proc[i].io_done++;
                     proc[i].io_remaining = proc[i].io_burst;
                     proc[i].state = READY;
+                    skip_cpu[i] = 1;
                 }
             }
         }
@@ -36,6 +38,7 @@ void fcfs(Process proc[], int n, GanttEntry gantt[], int *gantt_len, GanttEntry 
         // FCFS: 도착했고 READY 상태인 첫 번째 프로세스 선택
         int sel = -1;
         for (int i = 0; i < n; i++) {
+            if (skip_cpu[i]) continue;
             if (proc[i].arrival_time <= time &&
                 (proc[i].state == READY || proc[i].state == RUNNING) &&
                 proc[i].remaining_cpu > 0) {
@@ -76,7 +79,8 @@ void fcfs(Process proc[], int n, GanttEntry gantt[], int *gantt_len, GanttEntry 
         interval = (interval == 0) ? 1 : interval;
 
         if (proc[sel].cpu_done % interval == 0 &&
-            proc[sel].io_done < proc[sel].io_count) {
+            proc[sel].io_done < proc[sel].io_count &&
+            proc[sel].remaining_cpu > 0) {
             proc[sel].state = WAITING;
             prev_pid = -2;
             io_start[sel] = time;

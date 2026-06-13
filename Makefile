@@ -9,7 +9,7 @@ SRCS    = src/main.c       \
           src/evaluation.c \
           src/fcfs.c       \
           src/sjf.c        \
-          src/priority_sched.c \
+          src/priority.c \
           src/rr.c
 
 TARGET  = scheduler

@@ -9,6 +9,7 @@ void priority_non_preemptive(Process proc[], int n, GanttEntry gantt[], int *gan
     *io_gantt_len = 0;
 
     while (completed < n) {
+        int skip_cpu[MAX_PROCESSES] = {0};
 
         // 2. I/O operation - waiting queue 처리 (매 tick)
         for (int i = 0; i < n; i++) {
@@ -21,6 +22,7 @@ void priority_non_preemptive(Process proc[], int n, GanttEntry gantt[], int *gan
                     proc[i].io_done++;
                     proc[i].io_remaining = proc[i].io_burst;
                     proc[i].state = READY;
+                    skip_cpu[i] = 1;
                 }
             }
         }
@@ -32,6 +34,7 @@ void priority_non_preemptive(Process proc[], int n, GanttEntry gantt[], int *gan
         }
         if (sel == -1) {
             for (int i = 0; i < n; i++) {
+                if (skip_cpu[i]) continue;
                 if (proc[i].arrival_time <= time &&
                     proc[i].state == READY &&
                     proc[i].remaining_cpu > 0 &&
@@ -74,7 +77,8 @@ void priority_non_preemptive(Process proc[], int n, GanttEntry gantt[], int *gan
         interval = (interval == 0) ? 1 : interval;
         
         if (proc[sel].cpu_done % interval == 0 &&
-            proc[sel].io_done < proc[sel].io_count) {
+            proc[sel].io_done < proc[sel].io_count &&
+            proc[sel].remaining_cpu > 0) {
             proc[sel].state = WAITING;
             prev_pid = -2;
             io_start[sel] = time;
@@ -97,6 +101,7 @@ void priority_preemptive(Process proc[], int n, GanttEntry gantt[], int *gantt_l
     *io_gantt_len = 0;
 
     while (completed < n) {
+        int skip_cpu[MAX_PROCESSES] = {0};
 
         // 2. I/O operation - waiting queue 처리 (매 tick)
         for (int i = 0; i < n; i++) {
@@ -109,6 +114,7 @@ void priority_preemptive(Process proc[], int n, GanttEntry gantt[], int *gantt_l
                     proc[i].io_done++;
                     proc[i].io_remaining = proc[i].io_burst;
                     proc[i].state = READY;
+                    skip_cpu[i] = 1;
                 }
             }
         }
@@ -116,6 +122,7 @@ void priority_preemptive(Process proc[], int n, GanttEntry gantt[], int *gantt_l
         // Priority-P: 도착했고 WAITING/TERMINATED 아닌 것 중 priority가 가장 높은 프로세스
         int sel = -1, highest = INT_MAX;
         for (int i = 0; i < n; i++) {
+            if (skip_cpu[i]) continue;
             if (proc[i].arrival_time <= time &&
                 proc[i].state != WAITING &&
                 proc[i].state != TERMINATED &&
@@ -158,7 +165,8 @@ void priority_preemptive(Process proc[], int n, GanttEntry gantt[], int *gantt_l
         interval = (interval == 0) ? 1 : interval;
         
         if (proc[sel].cpu_done % interval == 0 &&
-            proc[sel].io_done < proc[sel].io_count) {
+            proc[sel].io_done < proc[sel].io_count &&
+            proc[sel].remaining_cpu > 0) {
             proc[sel].state = WAITING;
             prev_pid = -2;
             io_start[sel] = time;

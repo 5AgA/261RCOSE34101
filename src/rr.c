@@ -131,7 +131,7 @@ void round_robin(Process proc[], int n, int quantum, GanttEntry gantt[], int *ga
 
         // 2. I/O operation - 현재 프로세스의 I/O 트리거 체크
         if (cur->io_count > 0 && cur->io_done < cur->io_count &&
-            cur->cpu_done % interval == 0) {
+            cur->cpu_done % interval == 0 && cur->remaining_cpu > 0) {
             cur->state = WAITING;
             in_queue[idx] = 0;
             io_start[idx] = time;
